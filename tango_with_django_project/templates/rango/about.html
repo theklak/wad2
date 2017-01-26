@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+
+{% load staticfiles %} <!-- New line -->
+
+<html>
+    <head>
+        <title>Rango</title>
+    </head>
+    
+    <body>
+        <h1>Rango says...</h1>
+        
+        <div>
+            his is the about page! This tutorial has been put together by Thekla Kenneison.<br />
+            <strong>{{ boldmessage }}</strong><br />
+        </div>
+        <p><h1>Good god I have no idea what I'm doing.</h1>
+		<br /><i>Please save me</i>
+        <div>
+            <a href="/rango/about/">About</a><br />
+            <img src="{% static "images/cat.jpg" %}"
+                 alt="Picture of a cat"  width = "200px"/> <!-- New line -->
+        </div>
+    </body>
+    
+</html>
