@@ -1,12 +1,10 @@
-<ul>
-{% if user.is_authenticated %}
-	<li><a href="{% url 'restricted' %}">Restricted Page</a></li>
-	<li><a href="{% url 'logout' %}">Logout</a></li>
-{% else %}
-	<li><a href="{% url 'login' %}">Log In</a></li>
-	<li><a href="{% url 'resgiter' %}">Register</a></li>
-{% endif %}
-	<li><a href="{% url 'add_category' %}">Add a New Category</a></li>
-	<li><a href="{% url 'about' %}">About</a></li>
-	<li><a href="{% url 'index' %}">Index</a></li>
-</ul>
+{% extends 'rango/base.html' %}
+{% load staticfiles %}
+
+{% block title_block %}
+	Restricted Page
+{% endblock %}
+
+{% block body_block %}
+	Since you're logged in, you can see this text!
+{% endblock %}
