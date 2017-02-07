@@ -2,10 +2,14 @@ from django.shortcuts import render
 
 # Import the Category model
 from rango.models import Category, Page
-
-from django.http import HttpResponse
+from rango.forms import UserForm, UserProfileForm
 from rango.forms import CategoryForm
 from rango.forms import PageForm
+
+from django.contrib.auth import authenticate, login, logout
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse
+from django.contrib.auth.decorators import login_required
 
 def add_category(request):
     form = CategoryForm()
@@ -108,3 +112,69 @@ def show_category(request, category_name_slug):
 
     # Go render the response and return it to the client.
     return render(request, 'rango/category.html', context_dict)
+
+def register(request):
+    registered = False
+
+    if request.method == 'POST':
+        user_form = UserForm(data=request.POST)
+        profile_form = UserProfileForm(data=request.POST)
+
+        if user_form.is_valid() and profile_form.is_valid():
+            user = user_form.save()
+            user.set_password(user.password)
+            user.save()
+
+            profile = profile_form.save(commit=False)
+            profile.user = user
+
+            if 'picture' in request.FILES:
+                profile.picture = request.FILES['picture']
+
+            profile.save()
+
+            registered = True
+        else:
+            print(user_form.errors, profile_form.errors)
+    else:
+        user_form = UserForm()
+        profile_form = UserProfileForm()
+
+    return render(request, 'rango/register.html', {'user_form': user_form, 'profile_form': profile_form,
+                                                    'registered':registered})
+
+def user_login(request):
+    #If the request is an HTTP POST, try to pull out relevant info
+    if request.method == 'POST':
+        #gather username and password from login form
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        user = authenticate(username=username, password=password)
+
+        #if have user object, details are correct
+        if user:
+            #is account active?
+            if user.is_active:
+                #if account active and valid, log user in. send to homepage
+                login(request, user)
+                return HttpResponseRedirect(reverse('index'))
+            else:
+                #inactive account used
+                return HttpResponse("Your Rango account is disabled.")
+        else:
+            #bad log in details provided, so cant log in
+            print("Invalid login details: {0}, {1}.".formate(username,password))
+            return HttpResponse("Invalid login details supplied.")
+    else:
+        return render(request, 'rango/login.html', {})
+
+@login_required
+def restricted(request):
+    return HttpResponse("Since you're logged in, you can see this text!")
+
+#only logged in people can see this view
+@login_required
+def user_logout(request):
+    logout(request)
+    return HttpResponseRedirect(reverse('index'))
