@@ -31,7 +31,7 @@
 	{% if pages %}
 	<ul>
 		{% for page in pages %}
-			<li><a href="{{ page.url }}">{{ page.title }}</li>
+			<li><a href="{{ page.url }}">{{ page.title }}</a></li>
 		{% endfor %}
 	</ul>
 	{% else %}
@@ -41,5 +41,9 @@
 	
 	<div>
 		<img src="{% static "images/cat.jpg" %}" alt="Picture of a cat" width = "200px" /> 
+	</div>
+	
+	<div>
+		<p>visits: {{ visits }}</p>
 	</div>
 {% endblock %}
