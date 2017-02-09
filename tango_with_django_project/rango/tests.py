@@ -12,61 +12,122 @@ from rango.models import Page, Category
 import populate_rango
 import test_utils
 
-# ===== CHAPTER 5
-class Chapter5ModelTests(TestCase):
+#Chapter 6
+from rango.decorators import chapter6
 
-    def test_create_a_new_category(self):
-        cat = Category(name="Python")
-        cat.save()
+#Chapter 7
+from rango.decorators import chapter7
+from rango.forms import CategoryForm, PageForm
 
-        # Check category is in database
-        categories_in_database = Category.objects.all()
-        self.assertEquals(len(categories_in_database), 1)
-        only_poll_in_database = categories_in_database[0]
-        self.assertEquals(only_poll_in_database, cat)
+#Chapter 8
+from django.template import loader
+from django.conf import settings
+from rango.decorators import chapter8
+import os.path
 
-    def test_create_pages_for_categories(self):
-        cat = Category(name="Python")
-        cat.save()
+#Chapter 9
+from rango.models import User, UserProfile
+from rango.forms import UserForm, UserProfileForm
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.storage import default_storage
+from rango.decorators import chapter9
 
-        # create 2 pages for category python
-        python_page = Page()
-        python_page.category = cat
-        python_page.title="Official Python Tutorial"
-        python_page.url="http://docs.python.org/2/tutorial/"
-        python_page.save()
+#Chapter 10
+from datetime import datetime, timedelta
 
-        django_page = Page()
-        django_page.category = cat
-        django_page.title="Django"
-        django_page.url="https://docs.djangoproject.com/en/1.5/intro/tutorial01/"
-        django_page.save()
 
-        # Check if they both were saved
-        python_pages = cat.page_set.all()
-        self.assertEquals(python_pages.count(), 2)
+# ====== Chapter 10
+class Chapter10SessionTests(TestCase):
+    def test_user_number_of_access_and_last_access_to_index(self):
+        #Access index page 100 times
+        for i in xrange(0, 100):
+            try:
+                response = self.client.get(reverse('index'))
+            except:
+                try:
+                    response = self.client.get(reverse('rango:index'))
+                except:
+                    return False
+            session = self.client.session
+            # old_visists = session['visits']
 
-        #Check if they were saved properly
-        first_page = python_pages[0]
-        self.assertEquals(first_page, python_page)
-        self.assertEquals(first_page.title , "Official Python Tutorial")
-        self.assertEquals(first_page.url, "http://docs.python.org/2/tutorial/")
+            # Check it exists visits and last_visit attributes on session
+            self.assertIsNotNone(self.client.session['visits'])
+            self.assertIsNotNone(self.client.session['last_visit'])
 
-    def test_population_script_changes(self):
-        #Populate database
-        populate_rango.populate()
+            # Check last visit time is within 0.1 second interval from now
+            # self.assertAlmostEqual(datetime.now(),
+            #     datetime.strptime(session['last_visit'], "%Y-%m-%d %H:%M:%S.%f"), delta=timedelta(seconds=0.1))
 
-        # Check if the category has correct number of views and likes
-        cat = Category.objects.get(name='Python')
-        self.assertEquals(cat.views, 128)
-        self.assertEquals(cat.likes, 64)
+            # Get last visit time subtracted by one day
+            last_visit = datetime.now() - timedelta(days=1)
 
-        # Check if the category has correct number of views and likes
-        cat = Category.objects.get(name='Django')
-        self.assertEquals(cat.views, 64)
-        self.assertEquals(cat.likes, 32)
+            # Set last visit to a day ago and save
+            session['last_visit'] = str(last_visit)
+            session.save()
 
-        # Check if the category has correct number of views and likes
-        cat = Category.objects.get(name='Other Frameworks')
-        self.assertEquals(cat.views, 32)
-        self.assertEquals(cat.likes, 16)
+            # Check if the visits number in session is being incremented and it's correct
+            self.assertEquals(session['visits'], session['visits'])
+            # before it was i+1 but visits shouldn't change for the same ip visited in one day
+
+
+class Chapter10ViewTests(TestCase):
+    def test_index_shows_number_of_visits(self):
+        #Access index
+        try:
+            response = self.client.get(reverse('index'))
+        except:
+            try:
+                response = self.client.get(reverse('rango:index'))
+            except:
+                return False
+
+        # Check it contains visits message
+        self.assertIn('visits: 1'.lower(), response.content.lower())
+
+    def test_about_page_shows_number_of_visits(self):
+        #Access index page to count one visit
+        try:
+            response = self.client.get(reverse('index'))
+        except:
+            try:
+                response = self.client.get(reverse('rango:index'))
+            except:
+                return False
+
+        # Access about page
+        try:
+            response = self.client.get(reverse('about'))
+        except:
+            try:
+                response = self.client.get(reverse('rango:about'))
+            except:
+                return False
+
+        # Check it contains visits message
+        self.assertIn('visits: 1'.lower(), response.content.lower())
+
+    def test_visit_number_is_passed_via_context(self):
+        #Access index
+        try:
+            response = self.client.get(reverse('index'))
+        except:
+            try:
+                response = self.client.get(reverse('rango:index'))
+            except:
+                return False
+
+        # Check it contains visits message in the context
+        self.assertIn('visits', response.context)
+
+        #Access about page
+        try:
+            response = self.client.get(reverse('about'))
+        except:
+            try:
+                response = self.client.get(reverse('rango:about'))
+            except:
+                return False
+
+        # Check it contains visits message in the context
+        self.assertIn('visits', response.context)
